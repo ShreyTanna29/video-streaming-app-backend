@@ -1,0 +1,22 @@
+{
+  "name": "video-streaming-site",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShreyTanna29/video-streaming-app.git"
+  },
+  "author": "Shrey Tanna",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ShreyTanna29/video-streaming-app/issues"
+  },
+  "homepage": "https://github.com/ShreyTanna29/video-streaming-app#readme",
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
