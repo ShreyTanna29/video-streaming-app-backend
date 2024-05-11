@@ -15,7 +15,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new APIError(400, "input field cannot be empty.");
   }
 
-  const userExists = user.findOne({
+  const userExists = await user.findOne({
     $or: [{ email }, { username }],
   });
 
@@ -25,7 +25,14 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // getting files/images from multer
   const avatarLocalImage = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  let coverImageLocalPath = "";
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
 
   if (!avatarLocalImage) {
     throw new APIError(400, "avatar is required.");

@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 const userSchema = new Schema(
   {
     username: {
-      type: string,
+      type: String,
       required: true,
       lowercase: true,
       trim: true,
@@ -13,23 +13,23 @@ const userSchema = new Schema(
       index: true,
     },
     email: {
-      type: string,
+      type: String,
       required: true,
       lowercase: true,
       trim: true,
       unique: true,
     },
     fullname: {
-      type: string,
+      type: String,
       required: true,
       trim: true,
     },
     avatar: {
-      type: string, //image URL
+      type: String, //image URL
       required: true,
     },
     coverImage: {
-      type: string,
+      type: String,
     },
     watchHistory: [
       {
