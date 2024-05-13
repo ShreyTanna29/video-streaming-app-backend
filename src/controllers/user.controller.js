@@ -192,7 +192,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         )
       );
   } catch (error) {
-    throw new ApiError(401, "Inavalid refresh token");
+    throw new APIError(401, "Inavalid refresh token");
   }
 });
 
