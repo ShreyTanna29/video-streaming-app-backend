@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { user } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/apiResponse.js";
+import jwt from "jsonwebtoken";
 
 // generating access and refresh tokens for user
 const generateAccessTokenAndRefreshToken = async (userId) => {
@@ -14,6 +15,12 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
   await User.save({ validateBeforeSave: false });
 
   return { accessToken, refreshToken };
+};
+
+// options for cookies
+const cookieOptions = {
+  httpOnly: true,
+  secure: true,
 };
 
 // user signup
@@ -110,12 +117,6 @@ const loginUser = asyncHandler(async (req, res) => {
     .findById(userFound._id)
     .select("-password -refreshToken");
 
-  // options for cookies
-  const cookieOptions = {
-    httpOnly: true,
-    secure: true,
-  };
-
   res
     .status(200)
     .cookie("accessToken", accessToken, cookieOptions)
@@ -146,11 +147,6 @@ const logoutUser = asyncHandler(async (req, res) => {
     }
   );
 
-  const cookieOptions = {
-    httpOnly: true,
-    secure: true,
-  };
-
   res
     .status(200)
     .clearCookie("accessToken", cookieOptions)
@@ -159,3 +155,45 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 export { logoutUser };
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingToken = req.cookies.refreshToken || req.body.refreshToken;
+  if (!incomingToken) {
+    throw new APIError(401, "unauthorized request");
+  }
+
+  try {
+    const decodedToken = jwt.verify(
+      incomingToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+    const User = await user.findById(decodedToken?._id);
+    if (!User) {
+      throw new APIError(401, "Invalid refresh token");
+    }
+
+    if (incomingToken !== User.refreshToken) {
+      throw new APIError(401, "refresh token expired or used");
+    }
+
+    const { accessToken, newRefreshToken } = generateAccessTokenAndRefreshToken(
+      User._id
+    );
+
+    res
+      .status(200)
+      .cookie("accessToken", accessToken, cookieOptions)
+      .cookie("refreshToken", newRefreshToken, cookieOptions)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, refreshToken: newRefreshToken },
+          "access token refreshed"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(401, "Inavalid refresh token");
+  }
+});
+
+export { refreshAccessToken };
