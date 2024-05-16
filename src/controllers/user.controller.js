@@ -272,7 +272,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     );
   }
 
-  const User = user
+  const User = await user
     .findByIdAndUpdate(
       req.user?._id,
       {
@@ -306,7 +306,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     );
   }
 
-  const User = user
+  const User = await user
     .findByIdAndUpdate(
       req.user?._id,
       {
@@ -324,3 +324,80 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 });
 
 export { updateUserCoverImage };
+
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  if (!username?.trim()) {
+    throw new APIError(400, "username is missing");
+  }
+
+  // aggregation pipelines
+  const channel = await user.aggregate([
+    {
+      $match: {
+        username,
+      },
+    },
+    {
+      $lookup: {
+        from: "subcriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subcriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subcribersCount: {
+          $size: "$subscribers",
+        },
+        subscribedToChannelsCount: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullname: 1,
+        username: 1,
+        subcribersCount: 1,
+        subscribedToChannelsCount: 1,
+        isSubscribed: 1,
+        coverImage: 1,
+        email: 1,
+        avatar: 1,
+      },
+    },
+  ]);
+
+  if (!channel?.length) {
+    throw new APIError(404, "channel does not exists");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        channel[0],
+        "user channel details fetched succesfully"
+      )
+    );
+});
+
+export { getUserChannelProfile };
